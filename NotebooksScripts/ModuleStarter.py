@@ -169,6 +169,44 @@ class Storage():
         net_demand : float
             The net demand post battery operation.
         """
+        for i in range(len(demand_P)): # <--- Fill in the for loop to iterate over the range of demand_P length
+    # Conditional logic - check if demand is positive, negative or 0
+            if demand_P[i] >0: # <--- Complete the condition to check if demand is positive
+        # Case (a): Positive demand means discharge the battery
+        # Calculate battery power (discharge = negative internal battery power)
+                if i==0 : 
+                    self.storage_power[i]= -1*min(demand_P[i], self.max_power, (self.soc_0- self.min_soc/self.dt))
+                else :
+                    self.storage_power[i]= -1*min(demand_P[i]*1/self.efficiency, self.max_power, (self.soc_E[i-1]- self.min_soc)/self.dt) #min between demand, max power and what's available 
+
+            elif demand_P[i]<0 :
+                if i==0 : 
+                    self.storage_power[i]= -1*min(demand_P[i], self.max_power, (self.soc_0- self.min_soc/self.dt))
+                else :        
+                    self.storage_power[i] = (-1)*min(demand_P[i]*1/self.efficiency, self.max_power, (self.soc_E[i-1] - self.max_soc)/self.dt) #we add the excess energy to the existing battery power and we have enough room
+            else:
+            # Case (c): Zero demand means no battery operation
+                self.storage_power[i] = 0  # No power change
+
+            # Update state of charge (SoC) based on battery power and time step
+            if i == 0:
+                self.soc_E[0] = self.soc_0 + self.storage_power[i]*self.dt  # Maintain initial SoC
+            else:
+                self.soc_E[i] = self.soc_E[i-1] + self.storage_power[i]*self.t*(1-self.dt_degradation)  # Update SoC based on previous timestep's SoC and battery power, remember you need to convert power to energy
+                if self.soc_E[i] >self.max_soc: #maximum state of charge
+                    self.soc_E[i] = self.max_soc #we set the soc to the max   
+                elif self.soc_E[i] < self.min_soc: #minimum state of charge
+                    self.soc_E[i] = self.min_soc #we set the soc to the min
+    # update the net demand after battery operation
+            net_demand_P[i] = demand_P[i] + self.storage_power[i]  # Net demand is original demand plus battery power
+
+
+
+
+
+
+
+
         # add you conditional battery model from above, adjusting to include
         # the self keyword.
         if demand_P > 0:  
