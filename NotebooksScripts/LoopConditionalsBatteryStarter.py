@@ -18,7 +18,7 @@ Complete the script by filling in the missing code sections marked with <---.
 
 This is a comment block or docstring which can span multiple lines. 
 It is often used at the start of files to describe the file.
-@author: PLACE YOUR NAME HERE
+@author: Lariadel
 """
 
 # Import any necessary libraries 
@@ -41,8 +41,10 @@ demand_P = [5, -8, 12, -3, 7, -10, 15, -5, 8, -2]
 
 # Initialize lists to store battery power, state of charge and the new net demand after battery operation
 bat_P = [0] * len(demand_P)  # List to store battery power for each period, initialized to 0
-soc_E =   # <--- List to store state of charge, starting at 50 kWh
-net_demand_P =  # <--- List to store net demand after battery operation
+soc_E =[soc_0] + [0 for i in range(len(demand_P)-1)]  # <--- List to store state of charge, starting at 50 kWh
+# the list to store the state of charge has the same length as the demand list
+net_demand_P = [0 for i in range(len(demand_P))]  # <--- List to store net demand after battery operation
+# same for the net demmand list 
 
 # write code with the general structure:
 # for loop condition:
@@ -54,31 +56,38 @@ net_demand_P =  # <--- List to store net demand after battery operation
 #        do nothing
 
 # iterate through each time period using the range() function
-for : # <--- Fill in the for loop to iterate over the range of demand_P length
+for i in range(len(demand_P)): # <--- Fill in the for loop to iterate over the range of demand_P length
     
     # Conditional logic - check if demand is positive, negative or 0
-    if demand_P[i] 0: # <--- Complete the condition to check if demand is positive
+    if demand_P[i] >0: # <--- Complete the condition to check if demand is positive
         # Case (a): Positive demand means discharge the battery
         # Calculate battery power (discharge = negative internal battery power)
-        bat_P[i] = -1 * demand_P[i]
-        
-    el # <--- complete the else if condition to check if demand is negative:
-        # Case (b): Negative demand means charge the battery  
-        # Calculate battery power (charging = positive internal power)
-        bat_P[i] = 
+        if i==0 : 
+            bat_P[i]= -1*min(demand_P[i], max_power, (soc_0- min_soc/dt))
+        else :
+            bat_P[i]= -1*min(demand_P[i]*1/efficiency, max_power, (soc_E[i-1]- min_soc)/dt) #min between demand, max power and what's available 
 
+    elif demand_P[i]<0 :
+        if i==0 : 
+            bat_P[i]= -1*min(demand_P[i], max_power, (soc_0- min_soc/dt))
+        else :        
+            bat_P[i] = (-1)*min(demand_P[i]*1/efficiency, max_power, (soc_E[i-1] - max_soc)/dt) #we add the excess energy to the existing battery power and we have enough room
     else:
         # Case (c): Zero demand means no battery operation
         bat_P[i] = 0  # No power change
 
     # Update state of charge (SoC) based on battery power and time step
     if i == 0:
-        soc_E[0] = soc_0  # Maintain initial SoC
+        soc_E[0] = soc_0 + bat_P[i]*dt  # Maintain initial SoC
     else:
-        soc_E[i]  # Update SoC based on previous timestep's SoC and battery power, remember you need to convert power to energy
+        soc_E[i] = soc_E[i-1] + bat_P[i]*dt*(1-dt_degradation)  # Update SoC based on previous timestep's SoC and battery power, remember you need to convert power to energy
+        if soc_E[i] >max_soc: #maximum state of charge
+            soc_E[i] = max_soc #we set the soc to the max   
+        elif soc_E[i] < min_soc: #minimum state of charge
+            soc_E[i] = min_soc #we set the soc to the min
 
     # update the net demand after battery operation
-    net_demand_P[i] =
+    net_demand_P[i] = demand_P[i] + bat_P[i]  # Net demand is original demand plus battery power
 
 # Print the final state of charge
-print() # <--- Add a print statement to display the final state of charge. 
+print('Final state of charge in kWh', soc_E[-1]) # <--- Add a print statement to display the final state of charge. 
